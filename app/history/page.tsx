@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, Pill, Trash2 } from 'lucide-react'
+import { ChevronLeft, Pill, Trash2, AlertTriangle } from 'lucide-react'
 import { getHistoryEntries, deleteHistoryEntry, clearHistory } from '@/lib/db'
 import { HistoryEntry } from '@/lib/types'
 import {
@@ -100,11 +100,15 @@ export default function HistoryPage() {
           )}
 
           {/* Warning for non-standard */}
-          {!info.es_veterinario_estandar && (
+          {!info.isVeterinary && (
             <div className="mb-6 rounded-xl border-[3px] border-[#C62828] bg-[#E53935] p-4">
-              <p className="text-sm font-bold text-white">
-                ADVERTENCIA: Este medicamento NO es de uso veterinario estándar.
-              </p>
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0 text-white" />
+                <p className="text-sm font-bold text-white">
+                  ADVERTENCIA: Este medicamento NO es de uso veterinario estandar.
+                  Consulta OBLIGATORIAMENTE con un veterinario licenciado.
+                </p>
+              </div>
             </div>
           )}
 
@@ -113,24 +117,29 @@ export default function HistoryPage() {
             <h2 className="text-xl font-bold text-foreground">
               {selectedEntry.marca || selectedEntry.medicationName}
             </h2>
-            {selectedEntry.compuestos.length > 0 && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selectedEntry.compuestos.join(', ')}
-              </p>
-            )}
             <p className="mt-2 text-xs text-muted-foreground">
               {formatDate(selectedEntry.timestamp)}
             </p>
           </div>
 
-          {/* Info cards */}
-          <div className="space-y-4">
-            <InfoCard title="Para Qué Se Usa" content={info.para_que_se_usa} />
-            <InfoCard title="Especies Objetivo" content={info.especies_objetivo} />
-            <InfoCard title="Dosis Típica" content={info.dosis_tipica} />
-            <InfoCard title="Efectos Secundarios" content={info.efectos_secundarios} />
-            <InfoCard title="Advertencias" content={info.advertencias} />
+          {/* Info content as plain text */}
+          <div className="rounded-xl bg-card p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+            <div className="prose prose-sm max-w-none text-foreground">
+              {info.result.split('\n').map((paragraph, index) => (
+                paragraph.trim() ? (
+                  <p key={index} className="mb-3 last:mb-0 leading-relaxed">
+                    {paragraph}
+                  </p>
+                ) : null
+              ))}
+            </div>
           </div>
+
+          {/* Disclaimer */}
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Esta informacion es solo de referencia. Siempre consulta un veterinario 
+            licenciado antes de administrar cualquier medicamento.
+          </p>
         </div>
       </div>
     )
@@ -165,7 +174,7 @@ export default function HistoryPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Borrar historial</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta acción eliminará todo tu historial de escaneos. Esta acción 
+                  Esta accion eliminara todo tu historial de escaneos. Esta accion 
                   no se puede deshacer.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -191,7 +200,7 @@ export default function HistoryPage() {
               <Pill className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="text-center text-muted-foreground">
-              Aún no has escaneado ningún medicamento
+              Aun no has escaneado ningun medicamento
             </p>
           </div>
         ) : (
@@ -227,15 +236,6 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function InfoCard({ title, content }: { title: string; content: string }) {
-  return (
-    <div className="rounded-xl bg-card p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-      <h3 className="mb-2 text-sm font-semibold text-muted-foreground">{title}</h3>
-      <p className="text-foreground">{content}</p>
     </div>
   )
 }

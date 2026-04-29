@@ -4,102 +4,63 @@ export async function POST(request: NextRequest) {
   try {
     const { image, openaiKey } = await request.json()
 
-    if (!openaiKey) {
+    if (!image || !openaiKey) {
       return NextResponse.json(
-        { error: 'Clave de OpenAI requerida' },
+        { error: 'Imagen y clave OpenAI requeridas' },
         { status: 400 }
       )
     }
 
-    if (!image) {
-      return NextResponse.json(
-        { error: 'Imagen requerida' },
-        { status: 400 }
-      )
-    }
-
-    // Extract base64 data (remove data URL prefix if present)
-    const base64Data = image.includes(',') ? image.split(',')[1] : image
-    const imageUrl = `data:image/jpeg;base64,${base64Data}`
+    // Remove data:image/jpeg;base64, prefix if present
+    const base64Image = image.includes(',') ? image.split(',')[1] : image
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'gpt-4o',
+        max_tokens: 200,
         messages: [
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Analiza esta foto y devuelve SOLO un JSON válido (sin markdown, sin ```): {"marca": "nombre comercial o null", "compuestos": ["compuesto con dosis"], "laboratorio": "nombre o null", "reconocido": true/false}. Si no es un medicamento, reconocido: false.',
+                text: 'Analiza esta foto de un medicamento. Extrae: 1) Nombre comercial (marca), 2) Principios activos con dosis, 3) Laboratorio. Responde con formato natural, no JSON. Ejemplo: "Marca: Coltix, Activos: Condroitín 240mg, Lab: XYZ" o "No es un medicamento"',
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: imageUrl,
+                  url: `data:image/jpeg;base64,${base64Image}`,
                 },
               },
             ],
           },
         ],
-        max_tokens: 500,
       }),
     })
 
     const data = await response.json()
 
     if (!response.ok) {
-      if (response.status === 401) {
-        return NextResponse.json(
-          { error: 'Clave de OpenAI inválida. Verifica en Configuración.' },
-          { status: 401 }
-        )
-      }
       return NextResponse.json(
-        { error: `Error de OpenAI API: ${data.error?.message || 'Unknown'}` },
+        { error: `OpenAI error: ${data.error?.message || 'Unknown'}` },
         { status: response.status }
       )
     }
 
-    // Extract text from OpenAI response
-    const textContent = data.choices?.[0]?.message?.content || ''
-
-    // Parse JSON from response
-    let jsonContent = textContent.trim()
-
-    // Remove markdown if present
-    if (jsonContent.startsWith('```json')) {
-      jsonContent = jsonContent.replace(/^```json\s*/, '').replace(/```\s*$/, '')
-    } else if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/^```\s*/, '').replace(/```\s*$/, '')
-    }
-
-    try {
-      const parsed = JSON.parse(jsonContent)
-      return NextResponse.json(parsed)
-    } catch {
-      // Try to extract JSON object from response
-      const jsonMatch = jsonContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
-        return NextResponse.json(parsed)
-      }
-      return NextResponse.json({
-        marca: null,
-        compuestos: [],
-        laboratorio: null,
-        reconocido: false,
-      })
-    }
+    const textResponse = data.choices?.[0]?.message?.content || ''
+    
+    return NextResponse.json({ 
+      medicationInfo: textResponse 
+    })
   } catch (error) {
-    console.error('Vision API error:', error)
+    console.error('Vision error:', error)
     return NextResponse.json(
-      { error: 'Error al procesar imagen. Intenta de nuevo.' },
+      { error: 'Error al procesar imagen' },
       { status: 500 }
     )
   }

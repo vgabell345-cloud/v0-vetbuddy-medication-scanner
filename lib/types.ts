@@ -12,13 +12,8 @@ export interface SearchResult {
 }
 
 export interface MedicationInfo {
-  para_que_se_usa: string
-  especies_objetivo: string
-  dosis_tipica: string
-  efectos_secundarios: string
-  advertencias: string
-  es_veterinario_estandar: boolean
-  compuestos_activos: string[]
+  result: string
+  isVeterinary: boolean
 }
 
 export interface HistoryEntry {

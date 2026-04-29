@@ -10,12 +10,7 @@ import { FailureScreen } from './failure-screen'
 import { Header } from './header'
 import { getApiKeys, hasRequiredKeys } from '@/lib/api-keys'
 import { saveHistoryEntry } from '@/lib/db'
-import { 
-  AppScreen, 
-  VisionResult, 
-  SearchResult, 
-  MedicationInfo 
-} from '@/lib/types'
+import { AppScreen, MedicationInfo } from '@/lib/types'
 
 export function MedicationScanner() {
   const [screen, setScreen] = useState<AppScreen>('home')
@@ -23,7 +18,7 @@ export function MedicationScanner() {
   const [error, setError] = useState<string | null>(null)
   const [thumbnail, setThumbnail] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [visionResult, setVisionResult] = useState<VisionResult | null>(null)
+  const [medicationName, setMedicationName] = useState<string>('')
   const [medicationInfo, setMedicationInfo] = useState<MedicationInfo | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -33,25 +28,26 @@ export function MedicationScanner() {
     setError(null)
     setThumbnail(null)
     setSearchQuery('')
-    setVisionResult(null)
+    setMedicationName('')
     setMedicationInfo(null)
   }, [])
 
   const processSearch = useCallback(async (
-    medicationName: string, 
+    medName: string, 
     imageBase64: string | null = null
   ) => {
     const keys = getApiKeys()
     
     try {
-      // Step 1: Search
+      // Search and synthesize with GPT
       setLoadingStatus('Buscando información...')
       const searchResponse = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          query: medicationName, 
-          braveKey: keys.braveKey 
+          query: medName, 
+          braveKey: keys.braveKey,
+          openaiKey: keys.openaiKey
         }),
       })
 
@@ -60,73 +56,22 @@ export function MedicationScanner() {
         throw new Error(searchError.error || 'Error en la búsqueda')
       }
 
-      const searchResults: SearchResult[] = await searchResponse.json()
-
-      if (searchResults.length === 0) {
-        throw new Error('No se encontró información sobre este medicamento. Intenta con el nombre del compuesto activo.')
+      const data = await searchResponse.json()
+      const info: MedicationInfo = {
+        result: data.result,
+        isVeterinary: data.isVeterinary
       }
-
-      // Step 2: Synthesize with streaming
-      setLoadingStatus('Procesando resultados...')
-      const synthesizeResponse = await fetch('/api/synthesize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          medicationName,
-          searchResults,
-          openaiKey: keys.openaiKey,
-        }),
-      })
-
-      if (!synthesizeResponse.ok) {
-        const synthesizeError = await synthesizeResponse.json()
-        throw new Error(synthesizeError.error || 'Error al procesar')
-      }
-
-      // Read the stream
-      const reader = synthesizeResponse.body?.getReader()
-      if (!reader) throw new Error('Error de conexión')
-
-      let fullText = ''
-      const decoder = new TextDecoder()
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        fullText += decoder.decode(value)
-      }
-
-      // Parse the JSON response - handle markdown code blocks
-      let jsonContent = fullText.trim()
       
-      // Remove markdown code blocks if present
-      if (jsonContent.startsWith('```json')) {
-        jsonContent = jsonContent.replace(/^```json\s*/, '').replace(/```\s*$/, '')
-      } else if (jsonContent.startsWith('```')) {
-        jsonContent = jsonContent.replace(/^```\s*/, '').replace(/```\s*$/, '')
-      }
-
-      let info: MedicationInfo
-      try {
-        info = JSON.parse(jsonContent)
-      } catch {
-        // If still fails, try to extract JSON object from the response
-        const jsonMatch = jsonContent.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          info = JSON.parse(jsonMatch[0])
-        } else {
-          throw new Error('Error al procesar la respuesta')
-        }
-      }
       setMedicationInfo(info)
+      setMedicationName(medName)
 
       // Save to history
       const historyEntry = {
         id: crypto.randomUUID(),
         timestamp: Date.now(),
-        medicationName,
-        marca: visionResult?.marca || medicationName,
-        compuestos: visionResult?.compuestos || info.compuestos_activos || [],
+        medicationName: medName,
+        marca: medName,
+        compuestos: [],
         thumbnail: imageBase64,
         medicationInfo: info,
       }
@@ -142,7 +87,7 @@ export function MedicationScanner() {
       setError(err instanceof Error ? err.message : 'Error al procesar. Intenta de nuevo.')
       setScreen('home')
     }
-  }, [visionResult])
+  }, [])
 
   const handleImageCapture = useCallback(async (base64: string) => {
     setThumbnail(base64)
@@ -159,7 +104,7 @@ export function MedicationScanner() {
     const keys = getApiKeys()
 
     try {
-      // Step 1: Vision analysis
+      // Step 1: Vision analysis with GPT-4o
       setLoadingStatus('Analizando imagen...')
       const visionResponse = await fetch('/api/vision', {
         method: 'POST',
@@ -175,23 +120,19 @@ export function MedicationScanner() {
         throw new Error(visionError.error || 'Error al analizar imagen')
       }
 
-      const result: VisionResult = await visionResponse.json()
-      setVisionResult(result)
+      const result = await visionResponse.json()
+      const medInfo = result.medicationInfo as string
 
-      if (!result.reconocido) {
+      // Check if it's not a medication
+      if (medInfo.toLowerCase().includes('no es un medicamento') || 
+          medInfo.toLowerCase().includes('no reconocido')) {
         setScreen('failure')
         return
       }
 
-      // Build search query from results
-      const queryParts: string[] = []
-      if (result.marca) queryParts.push(result.marca)
-      if (result.compuestos.length > 0) {
-        queryParts.push(result.compuestos[0])
-      }
-      
-      const medicationName = queryParts.join(' ') || 'medicamento'
-      await processSearch(medicationName, base64)
+      // Extract medication name from the response
+      const extractedName = extractMedicationName(medInfo)
+      await processSearch(extractedName, base64)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar. Intenta de nuevo.')
       setScreen('home')
@@ -209,12 +150,6 @@ export function MedicationScanner() {
 
     setScreen('loading')
     setError(null)
-    setVisionResult({
-      marca: searchQuery.trim(),
-      compuestos: [],
-      laboratorio: null,
-      reconocido: true,
-    })
 
     await processSearch(searchQuery.trim())
   }, [searchQuery, processSearch])
@@ -250,8 +185,7 @@ export function MedicationScanner() {
       {screen === 'results' && medicationInfo && (
         <ResultsScreen
           thumbnail={thumbnail}
-          marca={visionResult?.marca || searchQuery}
-          compuestos={visionResult?.compuestos || medicationInfo.compuestos_activos || []}
+          medicationName={medicationName}
           medicationInfo={medicationInfo}
           onScanAnother={resetState}
         />
@@ -330,4 +264,23 @@ export function MedicationScanner() {
       )}
     </div>
   )
+}
+
+// Helper function to extract medication name from vision response
+function extractMedicationName(response: string): string {
+  // Try to extract brand name
+  const marcaMatch = response.match(/Marca:\s*([^,\n]+)/i)
+  if (marcaMatch) {
+    return marcaMatch[1].trim()
+  }
+  
+  // Try to extract active compounds
+  const activosMatch = response.match(/Activos?:\s*([^,\n]+)/i)
+  if (activosMatch) {
+    return activosMatch[1].trim()
+  }
+  
+  // Return first line as fallback
+  const firstLine = response.split('\n')[0].trim()
+  return firstLine.substring(0, 50) || 'medicamento'
 }
