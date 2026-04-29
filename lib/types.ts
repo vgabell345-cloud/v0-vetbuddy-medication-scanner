@@ -39,7 +39,7 @@ export type AppScreen =
   | 'failure'
 
 export interface ApiKeys {
-  claudeKey: string
+  geminiKey: string
   braveKey: string
   groqKey: string
 }

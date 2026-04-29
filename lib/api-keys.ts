@@ -1,16 +1,16 @@
 import { ApiKeys } from './types'
 
-const CLAUDE_KEY = 'claude_key'
+const GEMINI_KEY = 'gemini_key'
 const BRAVE_KEY = 'brave_key'
 const GROQ_KEY = 'groq_key'
 
 export function getApiKeys(): ApiKeys {
   if (typeof window === 'undefined') {
-    return { claudeKey: '', braveKey: '', groqKey: '' }
+    return { geminiKey: '', braveKey: '', groqKey: '' }
   }
   
   return {
-    claudeKey: localStorage.getItem(CLAUDE_KEY) || '',
+    geminiKey: localStorage.getItem(GEMINI_KEY) || '',
     braveKey: localStorage.getItem(BRAVE_KEY) || '',
     groqKey: localStorage.getItem(GROQ_KEY) || '',
   }
@@ -19,7 +19,7 @@ export function getApiKeys(): ApiKeys {
 export function setApiKeys(keys: ApiKeys): void {
   if (typeof window === 'undefined') return
   
-  localStorage.setItem(CLAUDE_KEY, keys.claudeKey)
+  localStorage.setItem(GEMINI_KEY, keys.geminiKey)
   localStorage.setItem(BRAVE_KEY, keys.braveKey)
   localStorage.setItem(GROQ_KEY, keys.groqKey)
 }
@@ -27,7 +27,7 @@ export function setApiKeys(keys: ApiKeys): void {
 export function clearApiKeys(): void {
   if (typeof window === 'undefined') return
   
-  localStorage.removeItem(CLAUDE_KEY)
+  localStorage.removeItem(GEMINI_KEY)
   localStorage.removeItem(BRAVE_KEY)
   localStorage.removeItem(GROQ_KEY)
 }
@@ -36,8 +36,8 @@ export function hasRequiredKeys(forVision: boolean = false): { valid: boolean; m
   const keys = getApiKeys()
   const missing: string[] = []
   
-  if (forVision && !keys.claudeKey) {
-    missing.push('Claude')
+  if (forVision && !keys.geminiKey) {
+    missing.push('Gemini')
   }
   if (!keys.braveKey) {
     missing.push('Brave Search')

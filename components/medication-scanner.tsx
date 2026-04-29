@@ -166,7 +166,7 @@ export function MedicationScanner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           image: base64, 
-          claudeKey: keys.claudeKey 
+          geminiKey: keys.geminiKey 
         }),
       })
 

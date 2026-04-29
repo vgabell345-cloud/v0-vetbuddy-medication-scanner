@@ -19,30 +19,30 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter()
-  const [claudeKey, setClaudeKey] = useState('')
+  const [geminiKey, setGeminiKey] = useState('')
   const [braveKey, setBraveKey] = useState('')
   const [groqKey, setGroqKey] = useState('')
-  const [showClaude, setShowClaude] = useState(false)
+  const [showGemini, setShowGemini] = useState(false)
   const [showBrave, setShowBrave] = useState(false)
   const [showGroq, setShowGroq] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const keys = getApiKeys()
-    setClaudeKey(keys.claudeKey)
+    setGeminiKey(keys.geminiKey)
     setBraveKey(keys.braveKey)
     setGroqKey(keys.groqKey)
   }, [])
 
   const handleSave = () => {
-    setApiKeys({ claudeKey, braveKey, groqKey })
+    setApiKeys({ geminiKey, braveKey, groqKey })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   const handleClear = () => {
     clearApiKeys()
-    setClaudeKey('')
+    setGeminiKey('')
     setBraveKey('')
     setGroqKey('')
   }
@@ -63,35 +63,35 @@ export default function SettingsPage() {
 
       <div className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-sm space-y-6">
-          {/* Claude API Key */}
+          {/* Gemini API Key */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
-              Clave API de Claude
+              Clave API de Gemini
             </label>
             <div className="relative">
               <input
-                type={showClaude ? 'text' : 'password'}
-                value={claudeKey}
-                onChange={(e) => setClaudeKey(e.target.value)}
-                placeholder="sk-ant-..."
+                type={showGemini ? 'text' : 'password'}
+                value={geminiKey}
+                onChange={(e) => setGeminiKey(e.target.value)}
+                placeholder="AIza..."
                 className="h-12 w-full rounded-xl border border-input bg-background px-4 pr-12 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
-                onClick={() => setShowClaude(!showClaude)}
+                onClick={() => setShowGemini(!showGemini)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={showClaude ? 'Ocultar' : 'Mostrar'}
+                aria-label={showGemini ? 'Ocultar' : 'Mostrar'}
               >
-                {showClaude ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showGemini ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
             <a
-              href="https://console.anthropic.com/keys"
+              href="https://aistudio.google.com/apikey"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
-              Obtener clave en console.anthropic.com
+              Obtener clave gratis en aistudio.google.com
               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
