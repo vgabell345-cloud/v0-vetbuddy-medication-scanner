@@ -39,24 +39,23 @@ export function MedicationScanner() {
     const keys = getApiKeys()
     
     try {
-      // Search and synthesize with GPT
-      setLoadingStatus('Buscando información...')
-      const searchResponse = await fetch('/api/search', {
+      // Research with GPT
+      setLoadingStatus('Buscando informacion...')
+      const researchResponse = await fetch('/api/research', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          query: medName, 
-          braveKey: keys.braveKey,
+          medicationName: medName, 
           openaiKey: keys.openaiKey
         }),
       })
 
-      if (!searchResponse.ok) {
-        const searchError = await searchResponse.json()
-        throw new Error(searchError.error || 'Error en la búsqueda')
+      if (!researchResponse.ok) {
+        const researchError = await researchResponse.json()
+        throw new Error(researchError.error || 'Error en la busqueda')
       }
 
-      const data = await searchResponse.json()
+      const data = await researchResponse.json()
       const info: MedicationInfo = {
         result: data.result,
         isVeterinary: data.isVeterinary
@@ -94,9 +93,9 @@ export function MedicationScanner() {
     setScreen('loading')
     setError(null)
 
-    const keysCheck = hasRequiredKeys(true)
+    const keysCheck = hasRequiredKeys()
     if (!keysCheck.valid) {
-      setError('Configura tus claves API en Configuración.')
+      setError('Configura tu clave API en Configuracion.')
       setScreen('home')
       return
     }
@@ -125,7 +124,8 @@ export function MedicationScanner() {
 
       // Check if it's not a medication
       if (medInfo.toLowerCase().includes('no es un medicamento') || 
-          medInfo.toLowerCase().includes('no reconocido')) {
+          medInfo.toLowerCase().includes('no reconocido') ||
+          medInfo.toLowerCase().includes('no identificable')) {
         setScreen('failure')
         return
       }
@@ -142,9 +142,9 @@ export function MedicationScanner() {
   const handleTextSearch = useCallback(async () => {
     if (!searchQuery.trim()) return
 
-    const keysCheck = hasRequiredKeys(false)
+    const keysCheck = hasRequiredKeys()
     if (!keysCheck.valid) {
-      setError('Configura tus claves API en Configuración.')
+      setError('Configura tu clave API en Configuracion.')
       return
     }
 
@@ -214,7 +214,7 @@ export function MedicationScanner() {
             <button
               onClick={() => setScreen('camera')}
               className="relative flex h-36 w-36 items-center justify-center rounded-full bg-primary shadow-lg transition-all hover:bg-[#388E3C] hover:shadow-xl active:scale-95"
-              aria-label="Abrir cámara"
+              aria-label="Abrir camara"
             >
               <div className="absolute inset-0 rounded-full bg-primary opacity-50 animate-pulse-ring" />
               <Camera className="h-14 w-14 text-white" />

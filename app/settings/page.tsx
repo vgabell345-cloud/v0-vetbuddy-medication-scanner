@@ -18,19 +18,16 @@ import {
 
 export default function SettingsPage() {
   const [openaiKey, setOpenaiKey] = useState('')
-  const [braveKey, setBraveKey] = useState('')
   const [showOpenai, setShowOpenai] = useState(false)
-  const [showBrave, setShowBrave] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const keys = getApiKeys()
     setOpenaiKey(keys.openaiKey)
-    setBraveKey(keys.braveKey)
   }, [])
 
   const handleSave = () => {
-    setApiKeys({ openaiKey, braveKey })
+    setApiKeys({ openaiKey })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -38,7 +35,6 @@ export default function SettingsPage() {
   const handleClear = () => {
     clearApiKeys()
     setOpenaiKey('')
-    setBraveKey('')
   }
 
   return (
@@ -90,39 +86,6 @@ export default function SettingsPage() {
             </a>
           </div>
 
-          {/* Brave API Key */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Clave API de Brave Search
-            </label>
-            <div className="relative">
-              <input
-                type={showBrave ? 'text' : 'password'}
-                value={braveKey}
-                onChange={(e) => setBraveKey(e.target.value)}
-                placeholder="BSA..."
-                className="h-12 w-full rounded-xl border border-input bg-background px-4 pr-12 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowBrave(!showBrave)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={showBrave ? 'Ocultar' : 'Mostrar'}
-              >
-                {showBrave ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-            <a
-              href="https://api.search.brave.com/app/keys"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              Obtener clave gratis en api.search.brave.com
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-
           {/* Save button */}
           <button
             onClick={handleSave}
@@ -136,15 +99,15 @@ export default function SettingsPage() {
             <AlertDialogTrigger asChild>
               <button className="flex h-12 w-full items-center justify-center gap-2 rounded-3xl border-2 border-destructive bg-background font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98]">
                 <Trash2 className="h-5 w-5" />
-                Borrar Claves
+                Borrar Clave
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Borrar todas las claves</AlertDialogTitle>
+                <AlertDialogTitle>Borrar clave API</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta accion eliminara todas tus claves API guardadas. Tendras que 
-                  ingresarlas de nuevo para usar la aplicacion.
+                  Esta accion eliminara tu clave API guardada. Tendras que 
+                  ingresarla de nuevo para usar la aplicacion.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -158,8 +121,8 @@ export default function SettingsPage() {
 
           {/* Privacy notice */}
           <p className="text-center text-xs text-muted-foreground">
-            Tus claves API se guardan solo en tu navegador. Nunca se envian a 
-            ningun lado excepto a las APIs correspondientes.
+            Tu clave API se guarda solo en tu navegador. Nunca se envia a 
+            ningun lado excepto a la API de OpenAI.
           </p>
         </div>
       </div>
