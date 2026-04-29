@@ -2,11 +2,11 @@ import { NextRequest } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { medicationName, searchResults, groqKey } = await request.json()
+    const { medicationName, searchResults, openaiKey } = await request.json()
 
-    if (!groqKey) {
+    if (!openaiKey) {
       return new Response(
-        JSON.stringify({ error: 'Clave de Groq requerida' }),
+        JSON.stringify({ error: 'Clave de OpenAI requerida' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       )
     }
@@ -24,14 +24,14 @@ export async function POST(request: NextRequest) {
       )
       .join('\n\n')
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqKey}`,
+        'Authorization': `Bearer ${openaiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'gpt-4o-mini',
         stream: true,
         messages: [
           {
@@ -65,13 +65,13 @@ IMPORTANTE: 'es_veterinario_estandar' es true SOLO si el medicamento se prescrib
     if (!response.ok) {
       if (response.status === 401) {
         return new Response(
-          JSON.stringify({ error: 'Clave de Groq inválida. Verifica en Configuración.' }),
+          JSON.stringify({ error: 'Clave de OpenAI inválida. Verifica en Configuración.' }),
           { status: 401, headers: { 'Content-Type': 'application/json' } }
         )
       }
       const errorText = await response.text()
       return new Response(
-        JSON.stringify({ error: `Error de Groq API: ${errorText}` }),
+        JSON.stringify({ error: `Error de OpenAI API: ${errorText}` }),
         { status: response.status, headers: { 'Content-Type': 'application/json' } }
       )
     }

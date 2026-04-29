@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { image, geminiKey } = await request.json()
+    const { image, openaiKey } = await request.json()
 
-    if (!geminiKey) {
+    if (!openaiKey) {
       return NextResponse.json(
-        { error: 'Clave de Gemini requerida' },
+        { error: 'Clave de OpenAI requerida' },
         { status: 400 }
       )
     }
@@ -20,51 +20,54 @@ export async function POST(request: NextRequest) {
 
     // Extract base64 data (remove data URL prefix if present)
     const base64Data = image.includes(',') ? image.split(',')[1] : image
+    const imageUrl = `data:image/jpeg;base64,${base64Data}`
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: 'Analiza esta foto y devuelve SOLO un JSON válido (sin markdown, sin ```): {"marca": "nombre comercial o null", "compuestos": ["compuesto con dosis"], "laboratorio": "nombre o null", "reconocido": true/false}. Si no es un medicamento, reconocido: false.',
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Analiza esta foto y devuelve SOLO un JSON válido (sin markdown, sin ```): {"marca": "nombre comercial o null", "compuestos": ["compuesto con dosis"], "laboratorio": "nombre o null", "reconocido": true/false}. Si no es un medicamento, reconocido: false.',
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageUrl,
                 },
-                {
-                  inline_data: {
-                    mime_type: 'image/jpeg',
-                    data: base64Data,
-                  },
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    )
+              },
+            ],
+          },
+        ],
+        max_tokens: 500,
+      }),
+    })
 
     const data = await response.json()
 
     if (!response.ok) {
-      if (response.status === 400 && data.error?.message?.includes('API key')) {
+      if (response.status === 401) {
         return NextResponse.json(
-          { error: 'Clave de Gemini inválida. Verifica en Configuración.' },
+          { error: 'Clave de OpenAI inválida. Verifica en Configuración.' },
           { status: 401 }
         )
       }
       return NextResponse.json(
-        { error: `Error de Gemini API: ${data.error?.message || 'Unknown'}` },
+        { error: `Error de OpenAI API: ${data.error?.message || 'Unknown'}` },
         { status: response.status }
       )
     }
 
-    // Extract text from Gemini response
-    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    // Extract text from OpenAI response
+    const textContent = data.choices?.[0]?.message?.content || ''
 
     // Parse JSON from response
     let jsonContent = textContent.trim()

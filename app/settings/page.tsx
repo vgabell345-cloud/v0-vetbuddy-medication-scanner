@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, Eye, EyeOff, ExternalLink, Trash2 } from 'lucide-react'
 import { getApiKeys, setApiKeys, clearApiKeys } from '@/lib/api-keys'
@@ -18,33 +17,28 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export default function SettingsPage() {
-  const router = useRouter()
-  const [geminiKey, setGeminiKey] = useState('')
+  const [openaiKey, setOpenaiKey] = useState('')
   const [braveKey, setBraveKey] = useState('')
-  const [groqKey, setGroqKey] = useState('')
-  const [showGemini, setShowGemini] = useState(false)
+  const [showOpenai, setShowOpenai] = useState(false)
   const [showBrave, setShowBrave] = useState(false)
-  const [showGroq, setShowGroq] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const keys = getApiKeys()
-    setGeminiKey(keys.geminiKey)
+    setOpenaiKey(keys.openaiKey)
     setBraveKey(keys.braveKey)
-    setGroqKey(keys.groqKey)
   }, [])
 
   const handleSave = () => {
-    setApiKeys({ geminiKey, braveKey, groqKey })
+    setApiKeys({ openaiKey, braveKey })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   const handleClear = () => {
     clearApiKeys()
-    setGeminiKey('')
+    setOpenaiKey('')
     setBraveKey('')
-    setGroqKey('')
   }
 
   return (
@@ -58,40 +52,40 @@ export default function SettingsPage() {
         >
           <ChevronLeft className="h-6 w-6" />
         </Link>
-        <h1 className="text-xl font-bold text-foreground">Configuración</h1>
+        <h1 className="text-xl font-bold text-foreground">Configuracion</h1>
       </header>
 
       <div className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-sm space-y-6">
-          {/* Gemini API Key */}
+          {/* OpenAI API Key */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
-              Clave API de Gemini
+              Clave API de OpenAI
             </label>
             <div className="relative">
               <input
-                type={showGemini ? 'text' : 'password'}
-                value={geminiKey}
-                onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="AIza..."
+                type={showOpenai ? 'text' : 'password'}
+                value={openaiKey}
+                onChange={(e) => setOpenaiKey(e.target.value)}
+                placeholder="sk-..."
                 className="h-12 w-full rounded-xl border border-input bg-background px-4 pr-12 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
-                onClick={() => setShowGemini(!showGemini)}
+                onClick={() => setShowOpenai(!showOpenai)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={showGemini ? 'Ocultar' : 'Mostrar'}
+                aria-label={showOpenai ? 'Ocultar' : 'Mostrar'}
               >
-                {showGemini ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showOpenai ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
             <a
-              href="https://aistudio.google.com/apikey"
+              href="https://platform.openai.com/api-keys"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
-              Obtener clave gratis en aistudio.google.com
+              Obtener clave en platform.openai.com
               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
@@ -129,39 +123,6 @@ export default function SettingsPage() {
             </a>
           </div>
 
-          {/* Groq API Key */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Clave API de Groq
-            </label>
-            <div className="relative">
-              <input
-                type={showGroq ? 'text' : 'password'}
-                value={groqKey}
-                onChange={(e) => setGroqKey(e.target.value)}
-                placeholder="gsk_..."
-                className="h-12 w-full rounded-xl border border-input bg-background px-4 pr-12 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowGroq(!showGroq)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={showGroq ? 'Ocultar' : 'Mostrar'}
-              >
-                {showGroq ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-            <a
-              href="https://console.groq.com/keys"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              Obtener clave gratis en console.groq.com
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-
           {/* Save button */}
           <button
             onClick={handleSave}
@@ -182,8 +143,8 @@ export default function SettingsPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Borrar todas las claves</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta acción eliminará todas tus claves API guardadas. Tendrás que 
-                  ingresarlas de nuevo para usar la aplicación.
+                  Esta accion eliminara todas tus claves API guardadas. Tendras que 
+                  ingresarlas de nuevo para usar la aplicacion.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -197,8 +158,8 @@ export default function SettingsPage() {
 
           {/* Privacy notice */}
           <p className="text-center text-xs text-muted-foreground">
-            Tus claves API se guardan solo en tu navegador. Nunca se envían a 
-            ningún lado excepto a las APIs correspondientes.
+            Tus claves API se guardan solo en tu navegador. Nunca se envian a 
+            ningun lado excepto a las APIs correspondientes.
           </p>
         </div>
       </div>

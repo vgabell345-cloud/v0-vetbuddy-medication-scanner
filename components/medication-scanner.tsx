@@ -74,7 +74,7 @@ export function MedicationScanner() {
         body: JSON.stringify({
           medicationName,
           searchResults,
-          groqKey: keys.groqKey,
+          openaiKey: keys.openaiKey,
         }),
       })
 
@@ -166,7 +166,7 @@ export function MedicationScanner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           image: base64, 
-          geminiKey: keys.geminiKey 
+          openaiKey: keys.openaiKey 
         }),
       })
 
