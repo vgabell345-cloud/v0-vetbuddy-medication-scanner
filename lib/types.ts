@@ -35,5 +35,4 @@ export type AppScreen =
 
 export interface ApiKeys {
   openaiKey: string
-  braveKey: string
 }
