@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: 'Eres experto en farmacología veterinaria y humana. Respondes ÚNICAMENTE en español, basándote en los resultados de búsqueda web proporcionados. Sé conciso, preciso y específico.',
+            content: 'Eres un experto en farmacología veterinaria. Respondes SIEMPRE con JSON válido sin markdown, sin ```json, sin explicaciones adicionales. Solo el objeto JSON puro.',
           },
           {
             role: 'user',
@@ -45,14 +45,14 @@ export async function POST(request: NextRequest) {
 Resultados de búsqueda:
 ${searchResultsText}
 
-Responde con un JSON válido (sin markdown, sin \`\`\`json):
+Devuelve SOLO un JSON válido (sin markdown, sin \`\`\` al inicio o final):
 {
   "para_que_se_usa": "explicación breve",
   "especies_objetivo": "perros, gatos, etc o 'No aplica'",
   "dosis_tipica": "dosis o 'Consultar veterinario'",
   "efectos_secundarios": "lista breve",
   "advertencias": "advertencias importantes",
-  "es_veterinario_estandar": true o false,
+  "es_veterinario_estandar": true/false,
   "compuestos_activos": ["compuesto1", "compuesto2"]
 }
 

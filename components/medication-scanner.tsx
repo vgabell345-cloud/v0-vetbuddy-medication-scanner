@@ -96,13 +96,28 @@ export function MedicationScanner() {
         fullText += decoder.decode(value)
       }
 
-      // Parse the JSON response
-      const jsonMatch = fullText.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        throw new Error('Error al procesar la respuesta')
+      // Parse the JSON response - handle markdown code blocks
+      let jsonContent = fullText.trim()
+      
+      // Remove markdown code blocks if present
+      if (jsonContent.startsWith('```json')) {
+        jsonContent = jsonContent.replace(/^```json\s*/, '').replace(/```\s*$/, '')
+      } else if (jsonContent.startsWith('```')) {
+        jsonContent = jsonContent.replace(/^```\s*/, '').replace(/```\s*$/, '')
       }
 
-      const info: MedicationInfo = JSON.parse(jsonMatch[0])
+      let info: MedicationInfo
+      try {
+        info = JSON.parse(jsonContent)
+      } catch {
+        // If still fails, try to extract JSON object from the response
+        const jsonMatch = jsonContent.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          info = JSON.parse(jsonMatch[0])
+        } else {
+          throw new Error('Error al procesar la respuesta')
+        }
+      }
       setMedicationInfo(info)
 
       // Save to history
@@ -252,23 +267,23 @@ export function MedicationScanner() {
 
       {/* Home screen */}
       {screen === 'home' && (
-        <div className="flex flex-1 flex-col items-center px-6 py-8">
+        <div className="flex flex-1 flex-col items-center justify-start px-6 pt-16">
           {/* Error message */}
           {error && (
-            <div className="mb-6 w-full max-w-sm rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-center text-sm text-destructive">
+            <div className="mb-8 w-full max-w-sm rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-center text-sm text-destructive">
               {error}
             </div>
           )}
 
           {/* Camera button */}
-          <div className="mb-6 flex flex-col items-center">
+          <div className="mb-8 flex flex-col items-center">
             <button
               onClick={() => setScreen('camera')}
-              className="relative flex h-[120px] w-[120px] items-center justify-center rounded-full bg-primary shadow-lg transition-all hover:bg-[#388E3C] hover:shadow-xl active:scale-95"
+              className="relative flex h-36 w-36 items-center justify-center rounded-full bg-primary shadow-lg transition-all hover:bg-[#388E3C] hover:shadow-xl active:scale-95"
               aria-label="Abrir cámara"
             >
               <div className="absolute inset-0 rounded-full bg-primary opacity-50 animate-pulse-ring" />
-              <Camera className="h-12 w-12 text-white" />
+              <Camera className="h-14 w-14 text-white" />
             </button>
             <p className="mt-4 text-sm text-muted-foreground">
               Escanear medicamento
@@ -276,14 +291,14 @@ export function MedicationScanner() {
           </div>
 
           {/* Separator */}
-          <div className="mb-6 flex w-full max-w-sm items-center gap-4">
+          <div className="my-8 flex w-full max-w-sm items-center gap-4">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-sm text-muted-foreground">o</span>
+            <span className="text-sm text-muted-foreground">&mdash; o &mdash;</span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
           {/* Search input */}
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm px-2">
             <input
               ref={searchInputRef}
               type="text"
@@ -296,7 +311,7 @@ export function MedicationScanner() {
             <button
               onClick={handleTextSearch}
               disabled={!searchQuery.trim()}
-              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-3xl bg-primary font-semibold text-primary-foreground transition-all hover:bg-[#388E3C] active:scale-[0.98] disabled:opacity-50"
+              className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-3xl bg-primary font-semibold text-primary-foreground transition-all hover:bg-[#388E3C] active:scale-[0.98] disabled:opacity-50"
             >
               <Search className="h-5 w-5" />
               Buscar
@@ -306,7 +321,7 @@ export function MedicationScanner() {
           {/* History link */}
           <Link
             href="/history"
-            className="mt-8 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="mt-10 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <History className="h-4 w-4" />
             Historial
