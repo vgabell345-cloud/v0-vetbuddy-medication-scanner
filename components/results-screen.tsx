@@ -18,27 +18,37 @@ interface ParsedSections {
   advertencias: string
 }
 
-function extractSection(text: string, pattern: string): string {
-  // Try to find the section heading and extract content until next heading or end
-  const regex = new RegExp(
-    `(?:${pattern})[:\\s]*([\\s\\S]*?)(?=\\n(?:Para Qu[eé] Se Usa|Especies|Dosis|Efectos Secundarios|Advertencias|$))`,
-    'i'
-  )
-  const match = text.match(regex)
-  if (match?.[1]) {
-    return match[1].trim().replace(/^\*+|\*+$/g, '').trim()
+function parseMarkdownSections(text: string): ParsedSections {
+  const sections: ParsedSections = {
+    paraQueSeUsa: '',
+    especiesObjetivo: '',
+    dosisTipica: '',
+    efectosSecundarios: '',
+    advertencias: '',
   }
-  return ''
-}
 
-function parseSections(result: string): ParsedSections {
-  return {
-    paraQueSeUsa: extractSection(result, 'Para Qu[eé] Se Usa'),
-    especiesObjetivo: extractSection(result, 'Especies(?: Objetivo)?'),
-    dosisTipica: extractSection(result, 'Dosis T[ií]pica'),
-    efectosSecundarios: extractSection(result, 'Efectos Secundarios'),
-    advertencias: extractSection(result, 'Advertencias'),
-  }
+  // Split by ## headers
+  const parts = text.split('##').filter(p => p.trim())
+
+  parts.forEach(part => {
+    const lines = part.trim().split('\n')
+    const header = lines[0].toLowerCase()
+    const content = lines.slice(1).join('\n').trim()
+
+    if (header.includes('para qué se usa') || header.includes('para que se usa')) {
+      sections.paraQueSeUsa = content
+    } else if (header.includes('especies')) {
+      sections.especiesObjetivo = content
+    } else if (header.includes('dosis')) {
+      sections.dosisTipica = content
+    } else if (header.includes('efectos secundarios')) {
+      sections.efectosSecundarios = content
+    } else if (header.includes('advertencias') && !header.includes('veterinario')) {
+      sections.advertencias = content
+    }
+  })
+
+  return sections
 }
 
 export function ResultsScreen({
@@ -47,7 +57,7 @@ export function ResultsScreen({
   medicationInfo,
   onScanAnother,
 }: ResultsScreenProps) {
-  const sections = parseSections(medicationInfo.result)
+  const sections = parseMarkdownSections(medicationInfo.result)
 
   return (
     <div className="flex flex-1 flex-col bg-[#F5F5F5]">

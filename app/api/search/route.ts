@@ -62,15 +62,27 @@ export async function POST(request: NextRequest) {
 
 ${searchContext}
 
-Proporciona información en español sobre:
-1. Para qué se usa
-2. Especies animales (si aplica a veterinaria)
-3. Dosis típica
-4. Efectos secundarios
-5. Advertencias importantes
-6. ¿Es uso veterinario estándar? (Sí/No)
+Responde en MARKDOWN con esta estructura exacta:
 
-Sé conciso y preciso. Usa párrafos cortos.`,
+## Para Qué Se Usa
+[Descripción de para qué se usa]
+
+## Especies Objetivo
+[Especies animales para las que se usa, o si es para humanos]
+
+## Dosis Típica
+[Información de dosis]
+
+## Efectos Secundarios
+[Lista de efectos secundarios posibles]
+
+## Advertencias
+[Advertencias importantes]
+
+## ¿Es Uso Veterinario Estándar?
+Responde EXACTAMENTE con: "Sí, es uso veterinario estándar" o "No, NO es uso veterinario estándar"
+
+Sé conciso y preciso en cada sección.`,
           },
         ],
       }),
@@ -86,11 +98,9 @@ Sé conciso y preciso. Usa párrafos cortos.`,
     }
 
     const result = gptData.choices?.[0]?.message?.content || ''
-    const resultLower = result.toLowerCase()
     
     // Determine if it's a standard veterinary medication
-    const isVeterinary = (resultLower.includes('sí') || resultLower.includes('si')) && 
-                         (resultLower.includes('veterinario') || resultLower.includes('veterinaria'))
+    const isVeterinary = result.toLowerCase().includes('sí, es uso veterinario estándar')
 
     return NextResponse.json({ 
       result,
