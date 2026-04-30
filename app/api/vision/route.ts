@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
 
     if (!image || !openaiKey) {
       return NextResponse.json(
-        { error: 'Imagen y clave OpenAI requeridas' },
+        { error: 'Image and OpenAI key required' },
         { status: 400 }
       );
     }
@@ -22,21 +22,27 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         model: 'gpt-4o',
         max_tokens: 500,
+        temperature: 0.1,
         messages: [
+          {
+            role: 'system',
+            content: 'You are a medication label reader. Extract information from medication packaging photos. Always respond in valid JSON format only, with no markdown or extra text.'
+          },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Analiza esta FOTO de un medicamento y extrae:
-1. Nombre comercial (marca)
-2. Principio activo y dosis si se ven
-3. Laboratorio/Fabricante si se ve
+                text: `Analyze this medication photo and extract information. Respond ONLY with this exact JSON structure (no markdown, no code blocks, just raw JSON):
 
-Responde SOLO con formato natural, sin JSON. Ejemplo:
-"Marca: Coltix Advance, Activo: Condroitín sulfato 240mg, Laboratorio: Laboratorio XYZ"
+{
+  "brandName": "the commercial brand name visible on the package",
+  "activeIngredients": "the active ingredients with dosages (e.g. 'Tetrahydrozoline 0.05% + Povidone 0.5%')",
+  "laboratory": "the manufacturer/laboratory name if visible",
+  "displayName": "a short display name combining brand and key active ingredient"
+}
 
-Si no puedes ver bien, di qué ves.`,
+If something is not visible, use empty string "". The activeIngredients field is CRITICAL - read the small text carefully to find them.`,
               },
               {
                 type: 'image_url',
@@ -59,15 +65,34 @@ Si no puedes ver bien, di qué ves.`,
       );
     }
 
-    const textResponse = data.choices?.[0]?.message?.content || '';
+    const textResponse = data.choices?.[0]?.message?.content || '{}';
+    
+    // Parse JSON response
+    let parsed;
+    try {
+      // Remove markdown code blocks if present
+      const cleaned = textResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    } catch (e) {
+      // Fallback: use raw text
+      parsed = {
+        brandName: textResponse,
+        activeIngredients: '',
+        laboratory: '',
+        displayName: textResponse
+      };
+    }
     
     return NextResponse.json({ 
-      medicationInfo: textResponse 
+      medicationInfo: parsed.displayName || parsed.brandName || textResponse,
+      brandName: parsed.brandName || '',
+      activeIngredients: parsed.activeIngredients || '',
+      laboratory: parsed.laboratory || ''
     });
   } catch (error) {
     console.error('Vision error:', error);
     return NextResponse.json(
-      { error: 'Error al procesar imagen' },
+      { error: 'Error processing image' },
       { status: 500 }
     );
   }

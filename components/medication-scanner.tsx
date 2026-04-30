@@ -34,7 +34,8 @@ export function MedicationScanner() {
 
   const processSearch = useCallback(async (
     medName: string, 
-    imageBase64: string | null = null
+    imageBase64: string | null = null,
+    activeIngredients: string = ''
   ) => {
     const keys = getApiKeys()
     
@@ -45,7 +46,9 @@ export function MedicationScanner() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          medicationName: medName, 
+          medicationName: medName,
+          brandName: medName,
+          activeIngredients: activeIngredients,
           openaiKey: keys.openaiKey
         }),
       })
@@ -120,19 +123,21 @@ export function MedicationScanner() {
       }
 
       const result = await visionResponse.json()
-      const medInfo = result.medicationInfo as string
+      const brandName = result.brandName || result.medicationInfo || ''
+      const activeIngredients = result.activeIngredients || ''
 
       // Check if it's not a medication
-      if (medInfo.toLowerCase().includes('no es un medicamento') || 
-          medInfo.toLowerCase().includes('no reconocido') ||
-          medInfo.toLowerCase().includes('no identificable')) {
+      if (brandName.toLowerCase().includes('no es un medicamento') || 
+          brandName.toLowerCase().includes('no reconocido') ||
+          brandName.toLowerCase().includes('no identificable') ||
+          (!brandName && !activeIngredients)) {
         setScreen('failure')
         return
       }
 
-      // Extract medication name from the response
-      const extractedName = extractMedicationName(medInfo)
-      await processSearch(extractedName, base64)
+      // Use brand name as display name, pass active ingredients to research
+      const displayName = brandName || activeIngredients.split(' ')[0] || 'medicamento'
+      await processSearch(displayName, base64, activeIngredients)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar. Intenta de nuevo.')
       setScreen('home')
@@ -266,21 +271,4 @@ export function MedicationScanner() {
   )
 }
 
-// Helper function to extract medication name from vision response
-function extractMedicationName(response: string): string {
-  // Try to extract brand name
-  const marcaMatch = response.match(/Marca:\s*([^,\n]+)/i)
-  if (marcaMatch) {
-    return marcaMatch[1].trim()
-  }
-  
-  // Try to extract active compounds
-  const activosMatch = response.match(/Activos?:\s*([^,\n]+)/i)
-  if (activosMatch) {
-    return activosMatch[1].trim()
-  }
-  
-  // Return first line as fallback
-  const firstLine = response.split('\n')[0].trim()
-  return firstLine.substring(0, 50) || 'medicamento'
-}
+
