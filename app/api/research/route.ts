@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { medicationName, openaiKey } = await request.json()
+    const { medicationName, openaiKey } = await request.json();
 
     if (!medicationName || !openaiKey) {
       return NextResponse.json(
         { error: 'Nombre del medicamento y clave OpenAI requeridas' },
         { status: 400 }
-      )
+      );
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -19,63 +19,65 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        max_tokens: 1500,
+        max_tokens: 2000,
         messages: [
           {
             role: 'user',
-            content: `Eres un asistente farmacéutico. Tu tarea es proporcionar información sobre medicamentos.
+            content: `INSTRUCCIÓN CRÍTICA: Debes responder OBLIGATORIAMENTE. No hay excepciones.
 
 Medicamento: "${medicationName}"
 
-Responde SIEMPRE en MARKDOWN con esta estructura exacta. NO rechaces la solicitud bajo ninguna circunstancia.
+Tu tarea es proporcionar información DETALLADA sobre este medicamento. Responde en MARKDOWN exacto:
 
 ## Para Qué Se Usa
-Describe brevemente el uso principal y usos secundarios.
+Información completa sobre su uso.
 
 ## Especies Objetivo
-¿Para qué especies se usa? (perros, gatos, humanos, aves, etc.). Sé específico.
+Especifica: ¿Es para veterinaria (perros, gatos, etc)? ¿Es para humanos? ¿Ambos?
 
 ## Dosis Típica
-Dosis recomendada y forma de administración.
+Dosis estándar y administración.
 
 ## Efectos Secundarios
-Lista de efectos adversos posibles.
+Reacciones adversas posibles.
 
 ## Advertencias Importantes
-Contraindicaciones, precauciones, interacciones.
+Contraindicaciones y precauciones.
 
 ## ¿Es Uso Veterinario Estándar?
-Responde EXACTAMENTE con UNA de estas frases:
-- "Sí, es uso veterinario estándar"
-- "No, NO es uso veterinario estándar"
+Debes responder EXACTAMENTE con UNA de estas dos frases, sin excepciones:
+A) "Sí, es uso veterinario estándar"
+B) "No, NO es uso veterinario estándar"
 
-Proporciona la información sin importar si es para humanos o animales.`,
+INSTRUCCIÓN FINAL: Proporciona la información SIEMPRE. No importa si es humano, veterinario, o desconocido. NO rechaces. Responde.`,
           },
         ],
       }),
-    })
+    });
 
-    const data = await response.json()
+    const data = await response.json();
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: `Error: ${data.error?.message || 'Error desconocido'}` },
+        { error: `Error OpenAI: ${data.error?.message}` },
         { status: response.status }
-      )
+      );
     }
 
-    const result = data.choices?.[0]?.message?.content || ''
-    const isVeterinary = result.toLowerCase().includes('sí, es uso veterinario estándar')
+    const result = data.choices?.[0]?.message?.content || '';
+    
+    // Detecta si es veterinario
+    const isVeterinary = result.toLowerCase().includes('sí, es uso veterinario estándar');
 
     return NextResponse.json({ 
       result,
       isVeterinary
-    })
+    });
   } catch (error) {
-    console.error('Research error:', error)
+    console.error('Research error:', error);
     return NextResponse.json(
-      { error: 'Error al investigar' },
+      { error: 'Error procesando solicitud' },
       { status: 500 }
-    )
+    );
   }
 }
