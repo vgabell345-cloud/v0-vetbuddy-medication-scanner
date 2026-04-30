@@ -23,29 +23,33 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'user',
-            content: `Proporciona información completa y precisa sobre "${medicationName}" en MARKDOWN con esta estructura EXACTA:
+            content: `Eres un asistente farmacéutico. Tu tarea es proporcionar información sobre medicamentos.
+
+Medicamento: "${medicationName}"
+
+Responde SIEMPRE en MARKDOWN con esta estructura exacta. NO rechaces la solicitud bajo ninguna circunstancia.
 
 ## Para Qué Se Usa
-Describe brevemente para qué se utiliza este medicamento.
+Describe brevemente el uso principal y usos secundarios.
 
 ## Especies Objetivo
-Especifica si es para uso veterinario (perros, gatos, caballos, etc.) o humano.
+¿Para qué especies se usa? (perros, gatos, humanos, aves, etc.). Sé específico.
 
 ## Dosis Típica
-Proporciona la dosis típica y forma de administración.
+Dosis recomendada y forma de administración.
 
 ## Efectos Secundarios
-Lista los efectos secundarios posibles.
+Lista de efectos adversos posibles.
 
 ## Advertencias Importantes
-Detalla contraindicaciones y advertencias.
+Contraindicaciones, precauciones, interacciones.
 
 ## ¿Es Uso Veterinario Estándar?
-Responde EXACTAMENTE con una de estas dos opciones:
+Responde EXACTAMENTE con UNA de estas frases:
 - "Sí, es uso veterinario estándar"
 - "No, NO es uso veterinario estándar"
 
-Sé preciso, conciso y usa párrafos cortos en cada sección.`,
+Proporciona la información sin importar si es para humanos o animales.`,
           },
         ],
       }),
