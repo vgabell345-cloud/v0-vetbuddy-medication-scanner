@@ -21,14 +21,22 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        max_tokens: 300,
+        max_tokens: 500,
         messages: [
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Analiza esta foto de un medicamento veterinario o humano. Extrae EXACTAMENTE: 1) Nombre comercial (marca), 2) Principios activos con dosis, 3) Laboratorio fabricante. Responde con formato natural sin JSON. Ejemplo: "Marca: Coltix Advance, Activos: Condroitín sulfato 240mg, Laboratorio: Farmacéutica XYZ" o "No es un medicamento identificable"',
+                text: `Analiza esta FOTO de un medicamento y extrae:
+1. Nombre comercial (marca)
+2. Principio activo y dosis si se ven
+3. Laboratorio/Fabricante si se ve
+
+Responde SOLO con formato natural, sin JSON. Ejemplo:
+"Marca: Coltix Advance, Activo: Condroitín sulfato 240mg, Laboratorio: Laboratorio XYZ"
+
+Si no puedes ver bien, di qué ves.`,
               },
               {
                 type: 'image_url',
@@ -46,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: `Error: ${data.error?.message || 'Error desconocido'}` },
+        { error: `Error: ${data.error?.message}` },
         { status: response.status }
       );
     }
